@@ -1,0 +1,54 @@
+<!-- air_pollution.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>air_pollution - The Pycodes</title>
+   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+   <div class="container">
+    
+    <p>Fetch an other Location Go to <a href="{{ url_for('index') }}"><button>Home</button></a></p>
+    <h3>Current Air Quality Data</br> {{ air_pollution.info }}</h3>
+    <h4>{{ air_pollution.day }}, {{ air_pollution.dt }}</h4>
+    
+        <div class="air_pollution-info">
+          
+           <p>Air Quality Index: {{ air_pollution.aqi }}</p>
+           <p>Carbon monoxide (CO): {{ air_pollution.co }}</p>
+           <p>Nitrogen monoxide (NO): {{ air_pollution.no }}</p>
+           <p>Nitrogen dioxide (NO2): {{ air_pollution.no2 }}</p>
+           <p>Ozone (O3): {{ air_pollution.o3 }}</p>
+           <p>Sulphur dioxide (SO2): {{ air_pollution.so2 }}</p>
+           <p>particulates (PM2.5): {{ air_pollution.pm2_5 }}</p>
+           <p>particulates (PM10): {{ air_pollution.pm10 }}</p>
+           <p>Ammonia (NH3): {{ air_pollution.nh3 }}</p>
+       
+            
+           
+       </div>
+       
+   </div>
+   <div class="container">
+      <h3>5 Day Forecast Data</br> {{ air_pollution.info }}</h3>
+      <div class="forecast">
+          {% for forecast_group in weekly_forecast %}
+              <div class="forecast-group">
+                  <h4 style="background-color: rgb(219, 219, 219); padding: 5px; border-radius: 5px;">{{ forecast_group.day }}, {{ forecast_group.date }}</h4>
+                  <div class="forecast-item">
+                      <p>Air Quality Index: {{ forecast_group.aqi }}</p>
+                      <p>Carbon monoxide (CO): {{ forecast_group.co }}</p>
+                      <p>particulates (PM2.5): {{ forecast_group.pm2_5 }}</p>
+                    
+                  </div>
+                  {% for forecast in forecast_group.forecasts %}
+                      
+                  {% endfor %}
+              </div>
+          {% endfor %}
+      </div>
+  </div>
+</body>
+</html>
