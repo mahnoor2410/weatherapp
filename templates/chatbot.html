@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AQI-Chatbot</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+
+<body>
+    <div class="chat-container">
+        <div class="chat-box">
+            <div class="messages" id="messageBox">
+                <!-- Chat messages will be dynamically added here -->
+            </div>
+        </div>
+        <div class="input-container">
+            <input type="text" id="userInput" placeholder="Type a message..." />
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        async function sendMessage() {
+            const userInput = document.getElementById("userInput").value.trim();
+            if (userInput === "") return; // Ignore empty input and sendMessage function exit
+
+            const messageBox = document.getElementById("messageBox");
+
+            // Add the user's message to the chat
+            const userMessageDiv = document.createElement("div");
+            userMessageDiv.classList.add("message", "user-message"); // it will dynamically add in messageBox
+            userMessageDiv.textContent = userInput;
+            messageBox.appendChild(userMessageDiv);
+
+            // Clear the input field
+            document.getElementById("userInput").value = "";
+
+            // Scroll to the bottom of the chat
+            messageBox.scrollTop = messageBox.scrollHeight;
+
+            try {
+                // Send the user's input to the server
+                const response = await fetch("/chatbot", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ message: userInput }),
+                });
+
+                if (!response.ok) {
+                    throw new Error("Failed to fetch response from server");
+                }
+
+                const data = await response.json();
+
+                // Add the "bot's response" to the chat
+                const botMessageDiv = document.createElement("div");
+                botMessageDiv.classList.add("message", "bot-message");
+                botMessageDiv.innerHTML = data.response; // Use innerHTML to render formatted response
+                messageBox.appendChild(botMessageDiv);
+                messageBox.scrollTop = messageBox.scrollHeight;
+            } catch (error) {
+                console.error("Error communicating with chatbot:", error);
+
+                // error message if something goes wrong
+                const errorMessageDiv = document.createElement("div");
+                errorMessageDiv.classList.add("message", "bot-message");
+                errorMessageDiv.textContent = "Sorry, something went wrong. Please try again later.";
+                messageBox.appendChild(errorMessageDiv);
+                messageBox.scrollTop = messageBox.scrollHeight;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -35,6 +35,7 @@ input[type="text"] {
    margin-bottom: 20px;
    border: 1px solid #ccc;
    border-radius: 5px;
+   width: 200px;
 }
  
 button {
@@ -58,4 +59,78 @@ button:hover {
 img {
    display: block;
    margin: 0 auto;
+}
+
+ /* Chat container */
+ .chat-container {
+   display: flex;
+   flex-direction: column;
+   height: 500px; /* Full height of the viewport */
+   width: 350px;
+   overflow: hidden;
+   margin: 50px auto;
+   padding: 20px;
+   background-color: #fff;
+   border-radius: 10px;
+   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Chat box */
+.chat-box {
+   padding: 20px;
+   max-height: 400px;
+   overflow-y: auto;
+}
+
+/* Messages */
+.messages {
+   display: flex;
+   flex-direction: column;
+   gap: 10px;
+}
+
+/* Message bubbles */
+.message {
+   padding: 10px 15px;
+   border-radius: 20px;
+   max-width: 70%;
+   line-height: 1.5;
+   word-wrap: break-word;
+}
+
+.user-message {
+   background-color: #007bff;
+   color: white;
+   align-self: flex-end;
+}
+
+.bot-message {
+   background-color: #e1e1e1;
+   color: #333;
+   align-self: flex-start;
+}
+
+/* Input container */
+.input-container {
+   margin-top: auto;
+   padding: 10px;
+   /* background-color: #f1f1f1; */
+   border-top: 1px solid #ddd;
+}
+
+
+button {
+   padding: 10px 20px;
+   margin:auto;
+   margin-bottom: 20px;
+   background-color: #007bff;
+   color: #fff;
+   border: none;
+   border-radius: 5px;
+   cursor: pointer;
+   transition: background-color 0.3s;
+}
+
+button:hover {
+   background-color: #0056b3;
 }
