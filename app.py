@@ -50,7 +50,7 @@ def format_response(text):
     cleaned_text = re.sub(r'[\*\_]', '', text)  # Remove unwanted characters
     formatted_text = re.sub(r'(^[A-Za-z\s]+:)', r'<b>\1</b><br><br>', cleaned_text, flags=re.M)  # Bold headings
     formatted_text = re.sub(r'(\.)(\s+)', r'.<br><br>', formatted_text)  # Add line breaks after sentences
-    return formatted_text
+    return formatted_text 
 
 @app.route('/chatbot', methods=['GET', 'POST'])
 def chatbot():
