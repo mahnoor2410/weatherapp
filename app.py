@@ -1,44 +1,104 @@
-from flask import Flask, render_template, request, jsonify
-import requests, datetime
-import os
-from dotenv import load_dotenv
-import google.generativeai as genai
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+from flask_login import LoginManager, login_user, login_required, logout_user, current_user
+from models import db, User
+from forms import SignupForm, LoginForm
+from gemini_config import model  # Custom module for your Gemini AI model configuration
+from air_pollution import get_air_pollution_data  # External function for air pollution API calls
+from config import Config  # Import the Config class
+from flask_migrate import Migrate
 import re
 
 app = Flask(__name__)
+migrate = Migrate(app, db)
 
-# ==================== GEMINI CONFIGURATION ============================
-load_dotenv()
-genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
+# ===================== DATABASE CONFIGURATION =======================
 
-generation_config = {
-    "temperature": 1,
-    "top_p": 0.95,
-    "top_k": 40,
-    "max_output_tokens": 8192,
-    "response_mime_type": "text/plain",
-}
+app.config.from_object(Config)
 
-# system_instruction
-model = genai.GenerativeModel(
-    model_name="gemini-1.5-pro",
-    generation_config=generation_config,
-    system_instruction=(
-        "Act as a knowledgeable and approachable environmental science guide, tailoring insights and actionable advice based on the Air Quality Index (AQI) levels. "
-        " AQI is 1 good ,AQI is 2 Moderate , AQI is 3 Unhealthy for Sensitive Groups, AQI is 4 Very Unhealthy for all, AQI is 5 Hazardous . "
-        "Provide clear and concise recommendations and suggestions as separate outputs. "
-        "Recommendations should be specific actions to take for the current AQI level. "
-        "Suggestions should include long-term or broader strategies to improve air quality or minimize risks in the future. "
-    ),
-)
+# Initialize the database
+db.init_app(app)
 
-# =============================== HOME PAGE ROUTE ====================================
+# Initialize Login Manager (session manage + handle user auth)
+login_manager = LoginManager() 
+login_manager.init_app(app)
+login_manager.login_view = 'login' # Set the login view (redirect if user not logged in)
+
+# ================== User Load Function used by Flask-Login ===================
+
+@login_manager.user_loader  # decorator func - load user from database using their user_id
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
+# ===================== HOME ROUTES =====================
 
 @app.route('/')
+def home():
+    return render_template('base.html')
+
+# ===================== SIGNUP ROUTES =====================
+
+@app.route('/signup', methods=['GET', 'POST'])
+def signup():
+    form = SignupForm()
+    if form.validate_on_submit():
+        user = User(username=form.username.data, email=form.email.data) # query username + email from db on form submission
+        user.set_password(form.password.data) # hash pass
+        db.session.add(user) # user add in db session
+        db.session.commit()  # changes
+        flash('Account created! Please log in.', 'success')
+        return redirect(url_for('login'))
+    return render_template('signup.html', form=form)
+
+# ===================== LOGIN ROUTES =====================
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(username=form.username.data).first() # query user's username from db on form submission
+        if user: # if user found
+            print(f"User found: {user.username}, is_active: {user.is_active()}")
+        if user and user.check_password(form.password.data):  
+            login_user(user)  # finally login
+            return redirect(url_for('index'))
+        else:
+            flash('Login Unsuccessful. Please check username and password', 'danger')
+    return render_template('login.html', form=form)
+
+# ===================== LOGOUT ROUTES =====================
+
+@app.route('/logout')
+def logout():
+    logout_user()
+    return redirect(url_for('index'))
+
+# ===================== DASHBOARD ROUTES =====================
+
+@app.route('/dashboard')
+@login_required
 def index():
-    return render_template('index.html')
+    return render_template('index.html', username=current_user.username)
+
+# ===================== AIR POLLUTION PAGE ROUTES =====================
+
+@app.route('/air_pollution', methods=['GET', 'POST'])
+# @login_required
+def air_pollution():
+    air_pollution_data, recommendations, suggestions, weekly_forecast = get_air_pollution_data(request) # call func
     
-# =============================== CHATBOT ROUTE ====================================
+    if air_pollution_data is None:  # If no air pollution data, return an error message
+        flash('Error fetching air pollution data.', 'danger')
+        return redirect(url_for('index'))
+
+    return render_template(
+        'air_pollution.html',
+        air_pollution=air_pollution_data,  
+        recommendations=recommendations,
+        suggestions=suggestions,
+        weekly_forecast=weekly_forecast
+    )
+
+# ===================== CHATBOT ROUTES =====================
 
 def format_response(text):
     """
@@ -50,124 +110,27 @@ def format_response(text):
     cleaned_text = re.sub(r'[\*\_]', '', text)  # Remove unwanted characters
     formatted_text = re.sub(r'(^[A-Za-z\s]+:)', r'<b>\1</b><br><br>', cleaned_text, flags=re.M)  # Bold headings
     formatted_text = re.sub(r'(\.)(\s+)', r'.<br><br>', formatted_text)  # Add line breaks after sentences
-    return formatted_text 
+    return formatted_text
 
 @app.route('/chatbot', methods=['GET', 'POST'])
 def chatbot():
     if request.method == 'POST':
+        # Get the user's input from the request
         user_input = request.json.get('message')
-        if not user_input:
-            return jsonify({"error": "No message provided."}), 400
 
-        # Generate Gemini response
+        if not user_input:
+            return jsonify({'error': 'No message provided'}), 400
+
+        # Start a chat session with the Gemini AI model - built in methods to interact with the Gemini model
         chat_session = model.start_chat(history=[])
         response = chat_session.send_message(user_input)
         
-        bot_response = response.text.strip()
+        bot_response = response.text.strip() # Get the chatbot's response
+        formatted_response = format_response(bot_response) # and format it
 
-        # Format the response for proper display
-        formatted_response = format_response(bot_response)
-
-        return jsonify({"response": formatted_response})
+        return jsonify({'response': formatted_response})
 
     return render_template('chatbot.html')
-
-# =============================== AIR POLLUTION PAGE ROUTE ====================================
-
-@app.route('/air_pollution', methods=['GET', 'POST'])
-def air_pollution():
-    air_pollution_data = None
-    recommendations = None
-    suggestions = None
-    weekly_forecast = []
-
-    if request.method == 'POST':
-        Latitude = request.form['Latitude']
-        Longitude = request.form['Longitude']
-        info = request.form['info']
-        API_KEY = 'c04faa84bc5f1882f53f19f8cbe9eb72'
-
-        # Current air pollution API call
-        current_url = f'http://api.openweathermap.org/data/2.5/air_pollution?lat={Latitude}&lon={Longitude}&appid={API_KEY}&units=metric'
-        current_response = requests.get(current_url)
-        current_data = current_response.json()
-
-        air_pollution_data = {
-            'info': info,
-            'aqi': current_data['list'][0]['main']['aqi'],
-            'co': current_data['list'][0]['components']['co'],
-            'no': current_data['list'][0]['components']['no'],
-            'no2': current_data['list'][0]['components']['no2'],
-            'o3': current_data['list'][0]['components']['o3'],
-            'so2': current_data['list'][0]['components']['so2'],
-            'pm2_5': current_data['list'][0]['components']['pm2_5'],
-            'pm10': current_data['list'][0]['components']['pm10'],
-            'nh3': current_data['list'][0]['components']['nh3'],
-            'dt': datetime.datetime.fromtimestamp(current_data['list'][0]['dt']).strftime('%H:%M:%S'),
-            'day': datetime.datetime.now().strftime('%A'),
-            'date': datetime.datetime.now().strftime('%Y-%m-%d')
-        }
-
-        # Generate Gemini responses for recommendations and suggestions
-        chat_session = model.start_chat(history=[])
-        recommendations_response = chat_session.send_message(
-            f"Provide specific recommendations for AQI level {air_pollution_data} in 3-4 lines without any Markdown or formatting."
-        )
-        suggestions_response = chat_session.send_message(
-            f"Provide broader suggestions for dealing with air quality issues at AQI level {air_pollution_data} in 3-4 lines without any Markdown or formatting."
-        )
-
-        def truncate_text(text, max_lines=4): # function for cleaning response
-            lines = text.splitlines()
-            return '\n'.join(lines[:max_lines])
-
-        recommendations = re.sub(r'[\*\_]', '', recommendations_response.text)
-        suggestions = re.sub(r'[\*\_]', '', suggestions_response.text)
-
-        recommendations = truncate_text(recommendations)
-        suggestions = truncate_text(suggestions)
-
-        # Weekly forecast API call
-        forecast_url = f'http://api.openweathermap.org/data/2.5/air_pollution/forecast?lat={Latitude}&lon={Longitude}&appid={API_KEY}&units=metric'
-        forecast_response = requests.get(forecast_url)
-        forecast_data = forecast_response.json()
-
-        current_date = None
-        forecast_group = None
-
-        for forecast in forecast_data['list']:
-            forecast_date = datetime.datetime.fromtimestamp(forecast['dt']).strftime('%Y-%m-%d')
-            forecast_day = datetime.datetime.fromtimestamp(forecast['dt']).strftime('%A')
-            if forecast_date != current_date:
-                if forecast_group:
-                    weekly_forecast.append(forecast_group)
-                forecast_group = {
-                    'day': forecast_day,
-                    'date': forecast_date,
-                    'aqi': forecast['main']['aqi'],
-                    'co': forecast['components']['co'],
-                    'pm2_5': forecast['components']['pm2_5'],
-                    'forecasts': []
-                }
-                current_date = forecast_date
-
-            forecast_item = {
-                'aqi': forecast['main']['aqi'],
-                'co': forecast['components']['co'],
-                'pm2_5': forecast['components']['pm2_5'],
-            }
-            forecast_group['forecasts'].append(forecast_item)
-
-        if forecast_group:
-            weekly_forecast.append(forecast_group)
-
-    return render_template(
-        'air_pollution.html',
-        air_pollution=air_pollution_data,
-        recommendations=recommendations,
-        suggestions=suggestions,
-        weekly_forecast=weekly_forecast
-    )
 
 if __name__ == '__main__':
     app.run(debug=True)

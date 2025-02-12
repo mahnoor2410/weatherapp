@@ -1,4 +1,0 @@
-.\vir\Scripts\activate
-
-
-flask --debug run

@@ -16,6 +16,11 @@
 <body>
 
     <div class="container">
+        <h4>Welcome, {{ username }}!
+            <a href="{{ url_for('logout') }}">Logout</a>
+            <a href="{{ url_for('chatbot') }}">ChatBot</a>
+        </h4>
+
     <h2>Global Air Quality App</h2>
     <p>Current and 5 Day Forecast Air Quality Data (Any Place on Goole MAP)</p>
         
@@ -51,7 +56,7 @@
 </div>
 
     <script
-    src = "https://maps.gomaps.pro/maps/api/js?key=AlzaSyQKSAUYJSXc7IUGpmUzxH-PSFKTPOlQCEZ&libraries=geometry,places">
+    src = "https://maps.gomaps.pro/maps/api/js?key=AlzaSytpnZgLNwATYoZmrO1VSMKgJdRO8nlT9MG&libraries=geometry,places">
     </script>
 
 

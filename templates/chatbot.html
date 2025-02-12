@@ -23,22 +23,22 @@
     <script>
         async function sendMessage() {
             const userInput = document.getElementById("userInput").value.trim();
-            if (userInput === "") return; // Ignore empty input and sendMessage function exit
-
+            if (userInput === "") return; // Ignore empty input
+    
             const messageBox = document.getElementById("messageBox");
-
+    
             // Add the user's message to the chat
             const userMessageDiv = document.createElement("div");
-            userMessageDiv.classList.add("message", "user-message"); // it will dynamically add in messageBox
+            userMessageDiv.classList.add("message", "user-message");
             userMessageDiv.textContent = userInput;
             messageBox.appendChild(userMessageDiv);
-
+    
             // Clear the input field
             document.getElementById("userInput").value = "";
-
+    
             // Scroll to the bottom of the chat
             messageBox.scrollTop = messageBox.scrollHeight;
-
+    
             try {
                 // Send the user's input to the server
                 const response = await fetch("/chatbot", {
@@ -46,24 +46,24 @@
                     headers: {
                         "Content-Type": "application/json",
                     },
-                    body: JSON.stringify({ message: userInput }),
+                    body: JSON.stringify({ message: userInput }),  // Send user input as JSON
                 });
-
+    
                 if (!response.ok) {
                     throw new Error("Failed to fetch response from server");
                 }
-
-                const data = await response.json();
-
-                // Add the "bot's response" to the chat
+    
+                const data = await response.json();  // Parse the response JSON
+    
+                // Add the bot's response to the chat
                 const botMessageDiv = document.createElement("div");
                 botMessageDiv.classList.add("message", "bot-message");
-                botMessageDiv.innerHTML = data.response; // Use innerHTML to render formatted response
+                botMessageDiv.innerHTML = data.response;  // Use innerHTML to render formatted response
                 messageBox.appendChild(botMessageDiv);
                 messageBox.scrollTop = messageBox.scrollHeight;
             } catch (error) {
                 console.error("Error communicating with chatbot:", error);
-
+    
                 // error message if something goes wrong
                 const errorMessageDiv = document.createElement("div");
                 errorMessageDiv.classList.add("message", "bot-message");
@@ -73,5 +73,6 @@
             }
         }
     </script>
+    
 </body>
 </html>
