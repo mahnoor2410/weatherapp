@@ -10,24 +10,53 @@
 <body>
     <div class="container mt-5">
         <h1 class="text-center mb-4">Login</h1>
+
+        <!-- Flash messages for success or error -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="mb-4">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category|default('info') }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        {% endwith %}
+
         <form method="POST">
             {{ form.hidden_tag() }}
             <div class="row justify-content-center">
                 <div class="col-md-6">
+                    <!-- Username Field -->
                     <div class="form-group">
                         <label for="username">{{ form.username.label }}</label>
                         {{ form.username(class="form-control", id="username") }}
+                        {% for error in form.username.errors %}
+                            <div class="alert alert-danger">{{ error }}</div>
+                        {% endfor %}
                     </div>
+
+                    <!-- Password Field -->
                     <div class="form-group">
                         <label for="password">{{ form.password.label }}</label>
                         {{ form.password(class="form-control", id="password") }}
+                        {% for error in form.password.errors %}
+                            <div class="alert alert-danger">{{ error }}</div>
+                        {% endfor %}
                     </div>
+
+                    <!-- Submit Button -->
                     <div class="form-group text-center">
                         {{ form.submit(class="btn btn-primary") }}
                     </div>
                 </div>
             </div>
         </form>
+
         <div class="text-center">
             <a href="{{ url_for('signup') }}" class="btn btn-link">Sign up</a>
         </div>

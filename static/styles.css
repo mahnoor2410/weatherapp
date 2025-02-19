@@ -1,73 +1,18 @@
-/* styles.css */
+/* General styling */
 body {
    font-family: Arial, sans-serif;
-   background-color: #f0f0f0;
    margin: 0;
    padding: 0;
-}
- 
-.container {
-   max-width: 600px;
-   margin: 50px auto;
-   padding: 20px;
-   background-color: #fff;
-   border-radius: 10px;
-   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-}
- 
-h1 {
-   text-align: center;
-   margin-bottom: 20px;
-}
- 
-form {
-   text-align: center;
-}
- 
-label {
-   font-weight: bold;
-}
- 
-input[type="text"] {
-   
-   padding: 10px;
-   margin-top: 5px;
-   margin-bottom: 20px;
-   border: 1px solid #ccc;
-   border-radius: 5px;
-   width: 200px;
-}
- 
-button {
-   padding: 10px 20px;
-   background-color: #007bff;
-   color: #fff;
-   border: none;
-   border-radius: 5px;
-   cursor: pointer;
-   transition: background-color 0.3s;
-}
- 
-button:hover {
-   background-color: #0056b3;
-}
- 
-.air_pollution-info {
-   margin-bottom: 20px;
-}
- 
-img {
-   display: block;
-   margin: 0 auto;
+   background-color: #f0f0f0;
 }
 
- /* Chat container */
- .chat-container {
+/* Chat container */
+.chat-container {
    display: flex;
    flex-direction: column;
+   justify-content: space-between;
    height: 500px; /* Full height of the viewport */
-   width: 350px;
-   overflow: hidden;
+   max-width: 600px;
    margin: 50px auto;
    padding: 20px;
    background-color: #fff;
@@ -76,20 +21,25 @@ img {
 }
 
 /* Chat box */
-.chat-box {
+#chat-box {
    padding: 20px;
    max-height: 400px;
    overflow-y: auto;
+   background-color: #ffffff;
+   border-radius: 10px;
+   margin-bottom: 10px;
+   display: flex;
+   flex-direction: column;
 }
 
-/* Messages */
+/* Messages section */
 .messages {
    display: flex;
    flex-direction: column;
    gap: 10px;
 }
 
-/* Message bubbles */
+/* Individual message styling */
 .message {
    padding: 10px 15px;
    border-radius: 20px;
@@ -99,7 +49,7 @@ img {
 }
 
 .user-message {
-   background-color: #007bff;
+   background-color: #007bff; /* Primary color */
    color: white;
    align-self: flex-end;
 }
@@ -112,18 +62,100 @@ img {
 
 /* Input container */
 .input-container {
+   display: flex;
+   justify-content: space-between;
+   align-items: center;
    margin-top: auto;
    padding: 10px;
-   /* background-color: #f1f1f1; */
    border-top: 1px solid #ddd;
 }
 
+#userInput {
+   width: 85%;
+   padding: 10px;
+   font-size: 16px;
+   border: 1px solid #ccc;
+   border-radius: 5px;
+}
+
+button {
+   margin-bottom: 18px;
+  margin-left: 5px;
+  padding-inline: 23px;
+   padding: 10px 20px;
+   background-color: #007bff; /* Primary color */
+   color: white;
+   border: none;
+   border-radius: 5px;
+   cursor: pointer;
+   transition: background-color 0.3s;
+}
+
+button:hover {
+   background-color: #0056b3; /* Darker shade for hover effect */
+}
+
+/* Link styling */
+a {
+   margin-top: 10px;
+   color: #007bff; /* Primary color */
+   text-decoration: none;
+}
+
+a:hover {
+   text-decoration: underline;
+}
+
+/* History page styling */
+.history-container {
+   width: 80%;
+   margin: 0 auto;
+}
+
+.chat-detail-box {
+   padding: 20px;
+   background-color: #f9f9f9;
+   border: 1px solid #ccc;
+}
+
+.container {
+   max-width: 600px;
+   margin: 50px auto;
+   padding: 20px;
+   background-color: #fff;
+   border-radius: 10px;
+   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+   text-align: center;
+   margin-bottom: 20px;
+}
+h2 {
+   text-align: center;
+   margin-bottom: 20px;
+}
+
+form {
+   text-align: center;
+}
+
+label {
+   font-weight: bold;
+}
+
+input[type="text"] {
+   padding: 10px;
+   margin-top: 5px;
+   margin-bottom: 20px;
+   border: 1px solid #ccc;
+   border-radius: 5px;
+   width: 200px;
+}
 
 button {
    padding: 10px 20px;
-   margin:auto;
-   margin-bottom: 20px;
-   background-color: #007bff;
+   background-color: #007bff; /* Primary color */
    color: #fff;
    border: none;
    border-radius: 5px;
@@ -132,5 +164,14 @@ button {
 }
 
 button:hover {
-   background-color: #0056b3;
+   background-color: #0056b3; /* Darker shade for hover effect */
+}
+
+.air_pollution-info {
+   margin-bottom: 20px;
+}
+
+img {
+   display: block;
+   margin: 0 auto;
 }

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>History of Conversations</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="history-container">
+        <h2>Your Chat History (Last 7 Days)</h2>  
+       <div class="chatbtn"><a href="{{ url_for('chatbot') }}">Back to ChatBot</a></div> 
+
+        <div id="historyList" class="history-list">
+            {% for chat in history %}
+                <div class="chat-box">
+                    <h3>{{ chat.title or 'No Title' }}</h3>
+                    <p><strong>Your Query:</strong> {{ chat.user_input }}</p>
+                    <p><strong>Bot Response:</strong> 
+                        {{ chat.bot_response | truncate(100, True) | safe }}
+                    </p>
+                    <button onclick="window.location.href='/history/{{ chat.id }}'">View Details</button>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>

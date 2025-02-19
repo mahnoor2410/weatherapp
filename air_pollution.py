@@ -16,17 +16,18 @@ def get_air_pollution_data(request):
         API_KEY = 'c04faa84bc5f1882f53f19f8cbe9eb72'
 
         try:
-            # =====================================  Current forecast API call  ======================================
-           
+            # =====================================  Current Air Quality API call  ======================================
             current_url = f'http://api.openweathermap.org/data/2.5/air_pollution?lat={Latitude}&lon={Longitude}&appid={API_KEY}&units=metric'
             current_response = requests.get(current_url)
-            current_response.raise_for_status()  # Will raise an exception if the request failed
+            current_response.raise_for_status()  # Raise an exception for HTTP errors
 
             current_data = current_response.json()
+            aqi = current_data['list'][0]['main']['aqi']  # Extract AQI value
 
+            # Store air pollution data
             air_pollution_data = {
                 'info': info,
-                'aqi': current_data['list'][0]['main']['aqi'],
+                'aqi': aqi,  # Store only the AQI value
                 'co': current_data['list'][0]['components']['co'],
                 'no': current_data['list'][0]['components']['no'],
                 'no2': current_data['list'][0]['components']['no2'],
@@ -40,38 +41,37 @@ def get_air_pollution_data(request):
                 'date': datetime.datetime.now().strftime('%Y-%m-%d')
             }
 
-            # Get recommendations and suggestions from Gemini
+            # ===================================== Get Recommendations and Suggestions from Gemini ======================================
             chat_session = model.start_chat(history=[])
+            recommendations_response = chat_session.send_message(
+                f"Provide broader recommendations for dealing with current air quality issues at AQI level  {aqi} in 3-4 lines without any Markdown or formatting."
+            )
+            suggestions_response = chat_session.send_message(
+                f"Provide broader long term suggestions for dealing with air quality issues at AQI level {aqi} in 3-4 lines without any Markdown or formatting."
+            )
 
-            # Sending requests for recommendations and suggestions
-            recommendations_response = chat_session.send_message(f"Provide specific recommendations for AQI level {air_pollution_data['aqi']}")
-            suggestions_response = chat_session.send_message(f"Provide broader suggestions for dealing with air quality issues at AQI level {air_pollution_data['aqi']}")
-
-            def truncate_text(text, max_lines=4):
-                """
-                Truncate the given text to a specific number of lines.
-                """
+            # Function for cleaning and truncating response
+            def truncate_text(text, max_lines=4):  # function for cleaning response
                 lines = text.splitlines()
                 return '\n'.join(lines[:max_lines])
 
             # Clean and truncate the responses
-            recommendations = re.sub(r'[\*\_]', '', recommendations_response.text)  # Remove * and _ characters
-            suggestions = re.sub(r'[\*\_]', '', suggestions_response.text)  # Remove * and _ characters
+            recommendations = re.sub(r'[\*\_]', '', recommendations_response.text)
+            suggestions = re.sub(r'[\*\_]', '', suggestions_response.text)
 
-            recommendations = truncate_text(recommendations)  # Limit to max 4 lines
-            suggestions = truncate_text(suggestions)  # Limit to max 4 lines
+            recommendations = truncate_text(recommendations)
+            suggestions = truncate_text(suggestions)
 
-            # =====================================  Weekly forecast API call  ======================================
-            
+            # =====================================  Weekly Air Quality Forecast API call ======================================
             forecast_url = f'http://api.openweathermap.org/data/2.5/air_pollution/forecast?lat={Latitude}&lon={Longitude}&appid={API_KEY}&units=metric'
             forecast_response = requests.get(forecast_url)
-            forecast_response.raise_for_status()  # Will raise an exception if the request failed
+            forecast_response.raise_for_status()  # Raise an exception for HTTP errors
 
             forecast_data = forecast_response.json()
-
             current_date = None
             forecast_group = None
 
+            # Process and group the forecast data by date
             for forecast in forecast_data['list']:
                 forecast_date = datetime.datetime.fromtimestamp(forecast['dt']).strftime('%Y-%m-%d')
                 forecast_day = datetime.datetime.fromtimestamp(forecast['dt']).strftime('%A')
@@ -99,9 +99,10 @@ def get_air_pollution_data(request):
                 weekly_forecast.append(forecast_group)
 
         except requests.exceptions.RequestException as e:
-            # Handle errors gracefully
+            # Handle errors 
             air_pollution_data = None
             recommendations = "Error fetching air pollution data."
             suggestions = "Please try again later."
+            print(f"Request failed: {e}")  
 
     return air_pollution_data, recommendations, suggestions, weekly_forecast
