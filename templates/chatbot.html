@@ -8,10 +8,9 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
     <script>
-        // Function to send the message via AJAX and update the chat box
 // Function to send the message via AJAX and update the chat box
 function sendMessage() {
-    const userInput = document.getElementById('userInput').value;
+    const userInput = document.getElementById('userInput').value; // get userInput by id
 
     if (!userInput) {
         alert('Please enter a message!');
@@ -33,14 +32,15 @@ function sendMessage() {
     $.ajax({
         url: '/chatbot',
         type: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify({ message: userInput }),
-        success: function(response) {
+        contentType: 'application/json', // Indicate that the request body is JSON
+        data: JSON.stringify({ message: userInput }), // Send the user message as JSON
+
+        success: function(response) { // Jab server ka response mile
             // Remove the "typing..." indicator
             document.getElementById('typingIndicator').remove();
 
-            // Add the bot's response to the chat
-            // Insert the bot's response as HTML using 'response.response' which contains formatted HTML
+        // response woh data hai jo Flask ne JSON format mein bheja
+        // response.response se hum bot ka jawab le rahe hain
             messageBox.innerHTML += `<div class="message bot-message">${response.response}</div>`;
             
             // Scroll to the bottom of the chat box

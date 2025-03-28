@@ -19,10 +19,10 @@ app.config.from_object(Config)
 # Initialize the database
 db.init_app(app)
 
-# Initialize Login Manager (session manage + handle user auth)
-login_manager = LoginManager() 
+# Initialize Login Manager 
+login_manager = LoginManager() # for user authentication
 login_manager.init_app(app)
-login_manager.login_view = 'login'  # Set the login view (redirect if user not logged in)
+login_manager.login_view = 'login'  # If the user is not logged in, redirect to login page
 
 # ================== User Load Function used by Flask-Login ===================
 @login_manager.user_loader  # decorator func - load user from database using their user_id
@@ -52,12 +52,12 @@ def signup():
             flash('Email is already taken. Please choose a different one.', 'danger')
             return redirect(url_for('signup'))
 
-        # If both username and email are unique, check if passwords match
+        # Check if passwords match
         if form.password.data != form.confirm_password.data:
             flash('Passwords do not match. Please try again.', 'danger')
             return redirect(url_for('signup'))
 
-        # If passwords match, create the user
+        # Create the user
         user = User(username=form.username.data, email=form.email.data)
         user.set_password(form.password.data)
         db.session.add(user)
