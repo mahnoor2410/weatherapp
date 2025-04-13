@@ -80,7 +80,7 @@
             <!-- Hourly AQI and Time -->
             <div id="aqiTime">
                <p>Selected Time: {{ selected_time }}</p>
-               <p>Selected AQI: {{ selected_aqi }}</p>
+               <p>Selected AQI: {{ air_pollution_data['aqi'] }}</p>
             </div>
 
             <!-- Hourly Bar Chart (using Chart.js) -->
@@ -100,8 +100,8 @@
 
             <!-- Daily AQI -->
             <div id="dailyAqi">
-               <p>Selected Date: {{ selected_time }}</p>
-               <p>Selected AQI: {{ selected_aqi }}</p>
+               <p>Selected Date: {{ air_pollution_data['date'] }}</p>
+               <p>Selected AQI: {{ air_pollution_data['aqi'] }}</p>
             </div>
 
             <!-- Daily Bar Chart (using Chart.js) -->

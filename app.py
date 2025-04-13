@@ -10,6 +10,11 @@ from flask_migrate import Migrate
 from markupsafe import Markup
 import re
 
+from flask_cors import CORS
+
+app = Flask(__name__)
+CORS(app)
+
 app = Flask(__name__)
 migrate = Migrate(app, db)
 

@@ -1,5 +1,5 @@
-import requests
 from datetime import datetime
+import requests
 import re
 from gemini_config import model
 
@@ -29,6 +29,11 @@ def get_air_pollution_data(request):
             current_data = current_response.json()
             aqi = current_data['list'][0]['main']['aqi']
 
+            # Correct time, date, and day based on AQI data timestamp
+            current_timestamp = current_data['list'][0]['dt']
+            selected_time = datetime.now().strftime('%H:%M:%S')  # Current time for 'selected_time'
+            selected_date = datetime.now().strftime('%Y-%m-%d')  # Current date for 'selected_date'
+
             air_pollution_data = {
                 'info': info,
                 'aqi': aqi,
@@ -40,9 +45,9 @@ def get_air_pollution_data(request):
                 'pm2_5': current_data['list'][0]['components']['pm2_5'],
                 'pm10': current_data['list'][0]['components']['pm10'],
                 'nh3': current_data['list'][0]['components']['nh3'],
-                'dt': datetime.fromtimestamp(current_data['list'][0]['dt']).strftime('%H:%M:%S'),
-                'day': datetime.fromtimestamp(current_data['list'][0]['dt']).strftime('%A'),
-                'date': datetime.fromtimestamp(current_data['list'][0]['dt']).strftime('%Y-%m-%d')
+                'dt': datetime.fromtimestamp(current_timestamp).strftime('%H:%M:%S'),
+                'day': datetime.fromtimestamp(current_timestamp).strftime('%A'),
+                'date': datetime.fromtimestamp(current_timestamp).strftime('%Y-%m-%d')
             }
 
             # Recommendations & Suggestions
@@ -67,8 +72,11 @@ def get_air_pollution_data(request):
             forecast_group = None
 
             for forecast in forecast_data['list']:
-                forecast_date = datetime.fromtimestamp(forecast['dt']).strftime('%Y-%m-%d')
-                forecast_day = datetime.fromtimestamp(forecast['dt']).strftime('%A')
+                forecast_timestamp = forecast['dt']
+                print(f"Forecast Raw Timestamp: {forecast_timestamp}")
+                forecast_date = datetime.fromtimestamp(forecast_timestamp).strftime('%Y-%m-%d')
+                forecast_day = datetime.fromtimestamp(forecast_timestamp).strftime('%A')
+
                 if forecast_date != current_date:
                     if forecast_group:
                         weekly_forecast.append(forecast_group)
@@ -99,14 +107,17 @@ def get_air_pollution_data(request):
                 hourly_pm25.append({'time': time_str, 'value': data['components']['pm2_5']})
                 hourly_pm10.append({'time': time_str, 'value': data['components']['pm10']})
 
-            selected_time = hourly_data[0]['time'] if hourly_data else None
-            selected_aqi = hourly_data[0]['value'] if hourly_data else None
-
-            # Daily Data
+            # Daily Data - Only one bar per day
+            seen_dates = set()
             for forecast in forecast_data['list']:
-                if forecast.get('components') and forecast.get('main'):
+                print(f"Raw Timestamp: {forecast['dt']}")  # Print raw timestamp
+                forecast_date = datetime.fromtimestamp(forecast['dt']).strftime('%Y-%m-%d')
+                
+                # Add daily data for each unique day
+                if forecast_date not in seen_dates:
+                    seen_dates.add(forecast_date)
                     daily_data.append({
-                        'date': datetime.fromtimestamp(forecast['dt']).strftime('%Y-%m-%d'),
+                        'date': forecast_date,
                         'aqi': forecast['main']['aqi'],
                         'pm2_5': forecast['components'].get('pm2_5', 0),
                         'pm10': forecast['components'].get('pm10', 0),
@@ -129,9 +140,10 @@ def get_air_pollution_data(request):
         'hourly_data': hourly_data,
         'hourly_pm25': hourly_pm25,
         'hourly_pm10': hourly_pm10,
-        'selected_time': selected_time,
+        'selected_time': selected_time,  # Displaying current time
         'selected_aqi': selected_aqi,
-        'daily_data': daily_data
+        'daily_data': daily_data,
+        'selected_date': selected_date  # Display current date
     }
 
 
