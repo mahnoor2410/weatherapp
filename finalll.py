@@ -249,3 +249,333 @@
 # # ===================== APP RUN =====================
 # if __name__ == '__main__':
 #     app.run(debug=True)
+
+
+
+
+
+
+
+
+
+
+##################################################################################################33
+
+
+
+
+
+# <!DOCTYPE html>
+# <html lang="en">
+# <head>
+#     <meta charset="UTF-8">
+#     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+#     <title>Air Quality App</title>
+#     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+#     <style type="text/css">
+#         #map {
+#             height: 400px;
+#             width: 600px;
+#         }
+#     </style>
+# </head>
+# <body>
+
+# <div class="container">
+#     <h4>Welcome, {{ username }}!
+#         <a href="{{ url_for('logout') }}">Logout</a>
+#         <a href="{{ url_for('chatbot') }}">ChatBot</a>
+#     </h4>
+
+#     <h2>Global Air Quality App</h2>
+#     <p>Current and 5 Day Forecast Air Quality Data (Any Place on Google Map)</p>
+
+#     <input id="searchInput" type="text" placeholder="Type Location (Auto Name)">
+#     <form action="/air_pollution" method="post">
+#         <input type="text" id="Lat" name="Latitude" placeholder="Latitude" required style="display:none;">
+#         <input type="text" id="Lng" name="Longitude" placeholder="Longitude" required style="display:none;">
+#         <input type="text" id="info" name="info" placeholder="info" style="display:none;">
+#         <button type="submit">Get AQI Data</button>
+#     </form>
+#     <br>
+#     <div id="successAlert" class="alert alert-success" role="alert" style="display:none;"></div>
+#     <div id="errorAlert" class="alert alert-danger" role="alert" style="display:none;"></div>
+
+#     <div id="map"></div>
+
+#     {% if air_pollution_data %}
+#         {% if air_pollution_data['air_pollution'] %}
+#             <div id="air_pollution-result" class="air_pollution-result">
+#                 <h1>Air Quality Index: {{ air_pollution_data['air_pollution']['aqi'] }}</h1>
+#                 <p>CO: {{ air_pollution_data['air_pollution']['co'] }}</p>
+#                 <p>PM2.5: {{ air_pollution_data['air_pollution']['pm2_5'] }}</p>
+#                 <p>PM10: {{ air_pollution_data['air_pollution']['pm10'] }}</p>
+#                 <p>NO2: {{ air_pollution_data['air_pollution']['no2'] }}</p>
+#                 <p>O3: {{ air_pollution_data['air_pollution']['o3'] }}</p>
+#                 <p>SO2: {{ air_pollution_data['air_pollution']['so2'] }}</p>
+#                 <p>NH3: {{ air_pollution_data['air_pollution']['nh3'] }}</p>
+#             </div>
+#         {% else %}
+#             <p class="error">Air quality data not available for this location.</p>
+#         {% endif %}
+#     {% else %}
+#         <p class="error">No data found for this location or the location might be incorrect.</p>
+#     {% endif %}
+# </div>
+
+# <!-- Recommendations Section -->
+# <div class="container">
+#     <div>
+#         <h3>Current Air Quality Recommendations</h3>
+#         <p>{{ recommendations }}</p>
+#     </div>
+
+#     <div>
+#         <h3>Long-Term Suggestions</h3>
+#         <p>{{ suggestions }}</p>
+#     </div>
+# </div>
+
+# <!-- 4-Day Forecast Data -->
+# <div class="container">
+#     <h3>4 Day Forecast Data</h3>
+#     <div class="forecast">
+#         {% for forecast_group in weekly_forecast %}
+#             <div class="forecast-group">
+#                 <h4 style="background-color: rgb(219, 219, 219); padding: 5px; border-radius: 5px;">
+#                     {{ forecast_group['day'] }}, {{ forecast_group['date'] }}
+#                 </h4>
+#                 <div class="forecast-item">
+#                     <p>Air Quality Index: {{ forecast_group['aqi'] }}</p>
+#                     <p>Carbon monoxide (CO): {{ forecast_group['co'] }}</p>
+#                     <p>Particulates (PM2.5): {{ forecast_group['pm2_5'] }}</p>
+#                 </div>
+#             </div>
+#         {% endfor %}
+#     </div>
+# </div>
+
+# <!-- Graphs for Hourly & Daily Data (using Chart.js for plotting) -->
+# <div class="container">
+#     <!-- Buttons for Hourly / Daily View -->
+#     <div class="button-container">
+#         <button id="hourlyButton" onclick="changeView('Hourly')" class="selected">Hourly</button>
+#         <button id="dailyButton" onclick="changeView('Daily')">Daily</button>
+#     </div>
+
+#     <!-- AQI and Chart Section -->
+#     <div id="aqiSection">
+#         <div id="hourlyView" style="display: block;">
+#             <h3>Hourly Air Quality</h3>
+
+#             <!-- Hourly AQI and Time -->
+#             <div id="aqiTime">
+#                 <p>Selected Time: {{ selected_time }}</p>
+#                 <p>Selected AQI: {{ selected_aqi }}</p>
+#             </div>
+
+#             <!-- Hourly Bar Chart (using Chart.js) -->
+#             <canvas id="hourlyChart"></canvas>
+
+#             <div id="pollutants">
+#                 <h4>PM2.5</h4>
+#                 <canvas id="hourlyPm25Chart"></canvas>
+
+#                 <h4>PM10</h4>
+#                 <canvas id="hourlyPm10Chart"></canvas>
+#             </div>
+#         </div>
+
+#         <div id="dailyView" style="display: none;">
+#             <h3>Daily Air Quality</h3>
+
+#             <!-- Daily AQI -->
+#             <div id="dailyAqi">
+#                 <p>Selected Date: {{ selected_time }}</p>
+#                 <p>Selected AQI: {{ selected_aqi }}</p>
+#             </div>
+
+#             <!-- Daily Bar Chart (using Chart.js) -->
+#             <canvas id="dailyChart"></canvas>
+
+#             <div id="dailyPollutants">
+#                 <h4>PM2.5</h4>
+#                 <canvas id="dailyPm25Chart"></canvas>
+
+#                 <h4>PM10</h4>
+#                 <canvas id="dailyPm10Chart"></canvas>
+#             </div>
+#         </div>
+#     </div>
+# </div>
+
+# <script
+#     src="https://maps.gomaps.pro/maps/api/js?key=AlzaSyhqNEIUpRypzrhtdvV4-VgfidVRB0lFaNs&libraries=geometry,places">
+# </script>
+
+# <script type="text/javascript">
+#     let hourlyData = {{ hourly_data | tojson }};
+#     let dailyData = {{ daily_data | tojson }};
+#     let hourlyPm25 = {{ hourly_pm25 | tojson }};
+#     let hourlyPm10 = {{ hourly_pm10 | tojson }};
+
+#     function initMap() {
+#         var map = new google.maps.Map(document.getElementById('map'), {
+#             center: {lat: 31.5436644, lng: 74.32700779},
+#             zoom: 15
+#         });
+
+#         var input = document.getElementById('searchInput');
+#         map.controls[google.maps.ControlPosition.TOP_LEFT].push(input);
+#         var autocomplete = new google.maps.places.Autocomplete(input);
+#         autocomplete.bindTo('bounds', map);
+
+#         var infowindow = new google.maps.InfoWindow();
+#         var marker = new google.maps.Marker({
+#             map: map,
+#             anchorPoint: new google.maps.Point(0, -29)
+#         });
+
+#         autocomplete.addListener('place_changed', function() {
+#             infowindow.close();
+#             marker.setVisible(false);
+#             var place = autocomplete.getPlace();
+#             if (!place.geometry) {
+#                 window.alert("Autocomplete's returned place contains no geometry");
+#                 return;
+#             }
+
+#             if (place.geometry.viewport) {
+#                 map.fitBounds(place.geometry.viewport);
+#             } else {
+#                 map.setCenter(place.geometry.location);
+#                 map.setZoom(13);
+#             }
+
+#             marker.setIcon({
+#                 url: place.icon,
+#                 size: new google.maps.Size(71, 71),
+#                 origin: new google.maps.Point(0, 0),
+#                 anchor: new google.maps.Point(17, 34),
+#                 scaledSize: new google.maps.Size(35, 35)
+#             });
+#             marker.setPosition(place.geometry.location);
+#             marker.setVisible(true);
+
+#             infowindow.setContent('<div><strong>' + place.name + '</strong><br>' + place.formatted_address);
+#             infowindow.open(map, marker);
+
+#             document.getElementById('Lat').value = place.geometry.location.lat();
+#             document.getElementById('Lng').value = place.geometry.location.lng();
+#             document.getElementById('info').value = place.name;
+#         });
+#     }
+
+#     google.maps.event.addDomListener(window, 'load', initMap);
+
+#     function changeView(view) {
+#         if (view === 'Hourly') {
+#             document.getElementById('hourlyView').style.display = 'block';
+#             document.getElementById('dailyView').style.display = 'none';
+#             renderHourlyCharts();
+#         } else {
+#             document.getElementById('hourlyView').style.display = 'none';
+#             document.getElementById('dailyView').style.display = 'block';
+#             renderDailyCharts();
+#         }
+#     }
+
+#     function renderHourlyCharts() {
+#         const hourlyChart = new Chart(document.getElementById('hourlyChart'), {
+#             type: 'bar',
+#             data: {
+#                 labels: hourlyData.map(item => item.time),
+#                 datasets: [{
+#                     label: 'Hourly AQI',
+#                     data: hourlyData.map(item => item.value),
+#                     backgroundColor: 'rgba(88, 191, 230, 0.3)',
+#                     borderColor: 'rgba(88, 191, 230, 1)',
+#                     borderWidth: 1
+#                 }]
+#             },
+#             options: {
+#                 responsive: true,
+#                 scales: {
+#                     y: {
+#                         beginAtZero: true
+#                     }
+#                 }
+#             }
+#         });
+
+#         const hourlyPm25Chart = new Chart(document.getElementById('hourlyPm25Chart'), {
+#             type: 'line',
+#             data: {
+#                 labels: hourlyPm25.map(item => item.time),
+#                 datasets: [{
+#                     label: 'PM2.5',
+#                     data: hourlyPm25.map(item => item.value),
+#                     fill: false,
+#                     borderColor: 'rgba(88, 191, 230, 1)',
+#                     tension: 0.1
+#                 }]
+#             },
+#             options: {
+#                 responsive: true,
+#                 scales: {
+#                     y: {
+#                         beginAtZero: true
+#                     }
+#                 }
+#             }
+#         });
+
+#         const hourlyPm10Chart = new Chart(document.getElementById('hourlyPm10Chart'), {
+#             type: 'line',
+#             data: {
+#                 labels: hourlyPm10.map(item => item.time),
+#                 datasets: [{
+#                     label: 'PM10',
+#                     data: hourlyPm10.map(item => item.value),
+#                     fill: false,
+#                     borderColor: 'rgba(153, 102, 255, 1)',
+#                     tension: 0.1
+#                 }]
+#             },
+#             options: {
+#                 responsive: true,
+#                 scales: {
+#                     y: {
+#                         beginAtZero: true
+#                     }
+#                 }
+#             }
+#         });
+#     }
+
+#     function renderDailyCharts() {
+#         const dailyChart = new Chart(document.getElementById('dailyChart'), {
+#             type: 'bar',
+#             data: {
+#                 labels: dailyData.map(item => item.date),
+#                 datasets: [{
+#                     label: 'Daily AQI',
+#                     data: dailyData.map(item => item.value),
+#                     backgroundColor: 'rgba(88, 191, 230, 0.3)',
+#                     borderColor: 'rgba(88, 191, 230, 1)',
+#                     borderWidth: 1
+#                 }]
+#             },
+#             options: {
+#                 responsive: true,
+#                 scales: {
+#                     y: {
+#                         beginAtZero: true
+#                     }
+#                 }
+#             }
+#         });
+#     }
+# </script>
+# </body>
+# </html>

@@ -1,5 +1,5 @@
 import requests
-import datetime
+from datetime import datetime
 import re
 from gemini_config import model
 
@@ -8,6 +8,12 @@ def get_air_pollution_data(request):
     recommendations = None
     suggestions = None
     weekly_forecast = []
+    hourly_data = []
+    hourly_pm25 = []
+    hourly_pm10 = []
+    selected_time = None
+    selected_aqi = None
+    daily_data = []
 
     if request.method == 'POST':
         Latitude = request.form['Latitude']
@@ -16,18 +22,16 @@ def get_air_pollution_data(request):
         API_KEY = 'c04faa84bc5f1882f53f19f8cbe9eb72'
 
         try:
-            # =====================================  Current Air Quality API call  ======================================
+            # Current Air Quality API call
             current_url = f'http://api.openweathermap.org/data/2.5/air_pollution?lat={Latitude}&lon={Longitude}&appid={API_KEY}&units=metric'
             current_response = requests.get(current_url)
-            current_response.raise_for_status()  # Raise an exception for HTTP errors
-
+            current_response.raise_for_status()
             current_data = current_response.json()
-            aqi = current_data['list'][0]['main']['aqi']  # Extract AQI value
+            aqi = current_data['list'][0]['main']['aqi']
 
-            # Store air pollution data
             air_pollution_data = {
                 'info': info,
-                'aqi': aqi,  # Store only the AQI value
+                'aqi': aqi,
                 'co': current_data['list'][0]['components']['co'],
                 'no': current_data['list'][0]['components']['no'],
                 'no2': current_data['list'][0]['components']['no2'],
@@ -36,45 +40,35 @@ def get_air_pollution_data(request):
                 'pm2_5': current_data['list'][0]['components']['pm2_5'],
                 'pm10': current_data['list'][0]['components']['pm10'],
                 'nh3': current_data['list'][0]['components']['nh3'],
-                'dt': datetime.datetime.fromtimestamp(current_data['list'][0]['dt']).strftime('%H:%M:%S'),
-                'day': datetime.datetime.now().strftime('%A'),
-                'date': datetime.datetime.now().strftime('%Y-%m-%d')
+                'dt': datetime.fromtimestamp(current_data['list'][0]['dt']).strftime('%H:%M:%S'),
+                'day': datetime.fromtimestamp(current_data['list'][0]['dt']).strftime('%A'),
+                'date': datetime.fromtimestamp(current_data['list'][0]['dt']).strftime('%Y-%m-%d')
             }
 
-            # ===================================== Get Recommendations and Suggestions from Gemini ======================================
+            # Recommendations & Suggestions
             chat_session = model.start_chat(history=[])
             recommendations_response = chat_session.send_message(
-                f"Provide broader recommendations for dealing with current air quality issues at AQI level  {aqi} in 3-4 lines without any Markdown or formatting."
+                f"Provide broader recommendations for dealing with current air quality issues at AQI level {aqi} in 3-4 lines without any Markdown or formatting."
             )
             suggestions_response = chat_session.send_message(
                 f"Provide broader long term suggestions for dealing with air quality issues at AQI level {aqi} in 3-4 lines without any Markdown or formatting."
             )
 
-            # Function for cleaning and truncating response
-            def truncate_text(text, max_lines=4):  # function for cleaning response
-                lines = text.splitlines()
-                return '\n'.join(lines[:max_lines])
+            recommendations = truncate_text(re.sub(r'[\*\_]', '', recommendations_response.text))
+            suggestions = truncate_text(re.sub(r'[\*\_]', '', suggestions_response.text))
 
-            # Clean and truncate the responses
-            recommendations = re.sub(r'[\*\_]', '', recommendations_response.text)
-            suggestions = re.sub(r'[\*\_]', '', suggestions_response.text)
-
-            recommendations = truncate_text(recommendations)
-            suggestions = truncate_text(suggestions)
-
-            # =====================================  Weekly Air Quality Forecast API call ======================================
+            # Weekly Forecast
             forecast_url = f'http://api.openweathermap.org/data/2.5/air_pollution/forecast?lat={Latitude}&lon={Longitude}&appid={API_KEY}&units=metric'
             forecast_response = requests.get(forecast_url)
-            forecast_response.raise_for_status()  # Raise an exception for HTTP errors
-
+            forecast_response.raise_for_status()
             forecast_data = forecast_response.json()
+
             current_date = None
             forecast_group = None
 
-            # Process and group the forecast data by date
             for forecast in forecast_data['list']:
-                forecast_date = datetime.datetime.fromtimestamp(forecast['dt']).strftime('%Y-%m-%d')
-                forecast_day = datetime.datetime.fromtimestamp(forecast['dt']).strftime('%A')
+                forecast_date = datetime.fromtimestamp(forecast['dt']).strftime('%Y-%m-%d')
+                forecast_day = datetime.fromtimestamp(forecast['dt']).strftime('%A')
                 if forecast_date != current_date:
                     if forecast_group:
                         weekly_forecast.append(forecast_group)
@@ -98,11 +92,49 @@ def get_air_pollution_data(request):
             if forecast_group:
                 weekly_forecast.append(forecast_group)
 
+            # Hourly Data
+            for data in forecast_data['list']:
+                time_str = datetime.fromtimestamp(data['dt']).strftime('%H:%M:%S')
+                hourly_data.append({'time': time_str, 'value': data['main']['aqi']})
+                hourly_pm25.append({'time': time_str, 'value': data['components']['pm2_5']})
+                hourly_pm10.append({'time': time_str, 'value': data['components']['pm10']})
+
+            selected_time = hourly_data[0]['time'] if hourly_data else None
+            selected_aqi = hourly_data[0]['value'] if hourly_data else None
+
+            # Daily Data
+            for forecast in forecast_data['list']:
+                if forecast.get('components') and forecast.get('main'):
+                    daily_data.append({
+                        'date': datetime.fromtimestamp(forecast['dt']).strftime('%Y-%m-%d'),
+                        'aqi': forecast['main']['aqi'],
+                        'pm2_5': forecast['components'].get('pm2_5', 0),
+                        'pm10': forecast['components'].get('pm10', 0),
+                        'co': forecast['components'].get('co', 0),
+                        'o3': forecast['components'].get('o3', 0),
+                        'so2': forecast['components'].get('so2', 0),
+                    })
+
         except requests.exceptions.RequestException as e:
-            # Handle errors 
             air_pollution_data = None
             recommendations = "Error fetching air pollution data."
             suggestions = "Please try again later."
-            print(f"Request failed: {e}")  
+            print(f"Request failed: {e}")
 
-    return air_pollution_data, recommendations, suggestions, weekly_forecast
+    return {
+        'air_pollution_data': air_pollution_data,
+        'recommendations': recommendations,
+        'suggestions': suggestions,
+        'weekly_forecast': weekly_forecast,
+        'hourly_data': hourly_data,
+        'hourly_pm25': hourly_pm25,
+        'hourly_pm10': hourly_pm10,
+        'selected_time': selected_time,
+        'selected_aqi': selected_aqi,
+        'daily_data': daily_data
+    }
+
+
+def truncate_text(text, max_lines=4):
+    lines = text.splitlines()
+    return '\n'.join(lines[:max_lines])

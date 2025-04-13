@@ -93,22 +93,45 @@ def index():
     return render_template('index.html', username=current_user.username)
 
 # ===================== AIR POLLUTION PAGE ROUTES =====================
-@app.route('/air_pollution', methods=['GET', 'POST'])
-@login_required
+@app.route('/air_pollution', methods=['POST'])
 def air_pollution():
-    air_pollution_data, recommendations, suggestions, weekly_forecast = get_air_pollution_data(request)
-    
-    if air_pollution_data is None:
-        flash('Error fetching air pollution data.', 'danger')
-        return redirect(url_for('index'))
+    # Get data from the `get_air_pollution_data` function
+    data = get_air_pollution_data(request)
 
-    return render_template(
-        'air_pollution.html',
-        air_pollution=air_pollution_data,  
-        recommendations=recommendations,
-        suggestions=suggestions,
-        weekly_forecast=weekly_forecast
-    )
+    # Handle the case where no data was returned or an error occurred
+    if not data or data.get('air_pollution_data') is None:
+        return "Error: Unable to fetch air pollution data. Please try again later."
+
+    # Access the specific data points from the dictionary returned
+    air_pollution_data = data.get('air_pollution_data', {})
+    recommendations = data.get('recommendations', 'No recommendations available.')
+    suggestions = data.get('suggestions', 'No suggestions available.')
+    weekly_forecast = data.get('weekly_forecast', [])
+    hourly_data = data.get('hourly_data', [])
+    hourly_pm25 = data.get('hourly_pm25', [])
+    hourly_pm10 = data.get('hourly_pm10', [])
+    selected_time = data.get('selected_time', None)
+    selected_aqi = data.get('selected_aqi', None)
+    daily_data = data.get('daily_data', [])
+
+            # Ensure daily_data is JSON serializable
+    for entry in daily_data:
+        if 'date' in entry and isinstance(entry['date'], datetime):  # ✅ FIXED HERE
+           entry['date'] = entry['date'].strftime('%Y-%m-%d')  # Convert datetime to string
+
+
+    # Now you can pass these variables to the template correctly
+    return render_template('air_pollution.html', 
+                           air_pollution_data=air_pollution_data, 
+                           recommendations=recommendations, 
+                           suggestions=suggestions, 
+                           weekly_forecast=weekly_forecast, 
+                           hourly_data=hourly_data, 
+                           hourly_pm25=hourly_pm25, 
+                           hourly_pm10=hourly_pm10, 
+                           selected_time=selected_time, 
+                           selected_aqi=selected_aqi,
+                           daily_data=daily_data)  # Add daily_data to context
 
 # ===================== CHATBOT RESPONSE =====================
 def format_response(text):

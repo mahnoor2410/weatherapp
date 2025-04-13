@@ -5,57 +5,282 @@
    <meta name="viewport" content="width=device-width, initial-scale=1.0">
    <title>Air Pollution</title>
    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+   
+   <!-- Include chart.js or any other chart library -->
+   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
    <div class="container">
-    
-    <p>Fetch another location, go to <a href="{{ url_for('index') }}"><button>Home</button></a></p>
-    <p>Our AQI assistant is here to help you....<a href="{{ url_for('chatbot') }}"><button>Chatbot</button></a></p>
+      <!-- Navigation Section -->
+      <p>Fetch another location, go to <a href="{{ url_for('index') }}"><button>Home</button></a></p>
+      <p>Our AQI assistant is here to help you....<a href="{{ url_for('chatbot') }}"><button>Chatbot</button></a></p>
 
-    <h3>Current Air Quality Data: {{ air_pollution['info'] }}</h3>
-    <h4>{{ air_pollution['day'] }}, {{ air_pollution['dt'] }}</h4>
-    
-    <div class="air_pollution-info">
-        <p>Air Quality Index: {{ air_pollution['aqi'] }}</p>
-        <p>Carbon monoxide (CO): {{ air_pollution['co'] }}</p>
-        <p>Nitrogen monoxide (NO): {{ air_pollution['no'] }}</p>
-        <p>Nitrogen dioxide (NO2): {{ air_pollution['no2'] }}</p>
-        <p>Ozone (O3): {{ air_pollution['o3'] }}</p>
-        <p>Sulphur dioxide (SO2): {{ air_pollution['so2'] }}</p>
-        <p>Particulates (PM2.5): {{ air_pollution['pm2_5'] }}</p>
-        <p>Particulates (PM10): {{ air_pollution['pm10'] }}</p>
-        <p>Ammonia (NH3): {{ air_pollution['nh3'] }}</p>
-    </div>
+      <!-- Current Air Quality Data -->
+      <h3>Current Air Quality Data: {{ air_pollution_data['info'] }}</h3>
+      <h4>{{ air_pollution_data['day'] }}, {{ air_pollution_data['dt'] }}</h4>
+
+      <div class="air_pollution-info">
+         <p>Air Quality Index: {{ air_pollution_data['aqi'] }}</p>
+         <p>Carbon monoxide (CO): {{ air_pollution_data['co'] }}</p>
+         <p>Nitrogen monoxide (NO): {{ air_pollution_data['no'] }}</p>
+         <p>Nitrogen dioxide (NO2): {{ air_pollution_data['no2'] }}</p>
+         <p>Ozone (O3): {{ air_pollution_data['o3'] }}</p>
+         <p>Sulphur dioxide (SO2): {{ air_pollution_data['so2'] }}</p>
+         <p>Particulates (PM2.5): {{ air_pollution_data['pm2_5'] }}</p>
+         <p>Particulates (PM10): {{ air_pollution_data['pm10'] }}</p>
+         <p>Ammonia (NH3): {{ air_pollution_data['nh3'] }}</p>
+      </div>
    </div>
 
+   <!-- Recommendations Section -->
    <div class="container">
-       <div>
-           <h3>Current Air Quality Recommendations</h3>
-           <p>{{ recommendations }}</p>
-       </div>
+      <div>
+         <h3>Current Air Quality Recommendations</h3>
+         <p>{{ recommendations }}</p>
+      </div>
 
-       <div>
-           <h3>Long-Term Suggestions</h3>
-           <p>{{ suggestions }}</p>
-       </div>
+      <div>
+         <h3>Long-Term Suggestions</h3>
+         <p>{{ suggestions }}</p>
+      </div>
    </div>
 
+   <!-- 4-Day Forecast Data -->
    <div class="container">
       <h3>4 Day Forecast Data</h3>
       <div class="forecast">
-          {% for forecast_group in weekly_forecast %}
-              <div class="forecast-group">
-                  <h4 style="background-color: rgb(219, 219, 219); padding: 5px; border-radius: 5px;">
-                      {{ forecast_group['day'] }}, {{ forecast_group['date'] }}
-                  </h4>
-                  <div class="forecast-item">
-                      <p>Air Quality Index: {{ forecast_group['aqi'] }}</p>
-                      <p>Carbon monoxide (CO): {{ forecast_group['co'] }}</p>
-                      <p>Particulates (PM2.5): {{ forecast_group['pm2_5'] }}</p>
-                  </div>
-              </div>
-          {% endfor %}
+         {% for forecast_group in weekly_forecast %}
+            <div class="forecast-group">
+               <h4 style="background-color: rgb(219, 219, 219); padding: 5px; border-radius: 5px;">
+                  {{ forecast_group['day'] }}, {{ forecast_group['date'] }}
+               </h4>
+               <div class="forecast-item">
+                  <p>Air Quality Index: {{ forecast_group['aqi'] }}</p>
+                  <p>Carbon monoxide (CO): {{ forecast_group['co'] }}</p>
+                  <p>Particulates (PM2.5): {{ forecast_group['pm2_5'] }}</p>
+               </div>
+            </div>
+         {% endfor %}
       </div>
-  </div>
+   </div>
+
+   <!-- Graphs for Hourly & Daily Data (using Chart.js for plotting) -->
+   <div class="container">
+      <!-- Buttons for Hourly / Daily View -->
+      <div class="button-container">
+         <button id="hourlyButton" onclick="changeView('Hourly')" class="selected">Hourly</button>
+         <button id="dailyButton" onclick="changeView('Daily')">Daily</button>
+      </div>
+
+      <!-- AQI and Chart Section -->
+      <div id="aqiSection">
+         <div id="hourlyView" style="display: block;">
+            <h3>Hourly Air Quality</h3>
+
+            <!-- Hourly AQI and Time -->
+            <div id="aqiTime">
+               <p>Selected Time: {{ selected_time }}</p>
+               <p>Selected AQI: {{ selected_aqi }}</p>
+            </div>
+
+            <!-- Hourly Bar Chart (using Chart.js) -->
+            <canvas id="hourlyChart"></canvas>
+
+            <div id="pollutants">
+               <h4>PM2.5</h4>
+               <canvas id="hourlyPm25Chart"></canvas>
+
+               <h4>PM10</h4>
+               <canvas id="hourlyPm10Chart"></canvas>
+            </div>
+         </div>
+
+         <div id="dailyView" style="display: none;">
+            <h3>Daily Air Quality</h3>
+
+            <!-- Daily AQI -->
+            <div id="dailyAqi">
+               <p>Selected Date: {{ selected_time }}</p>
+               <p>Selected AQI: {{ selected_aqi }}</p>
+            </div>
+
+            <!-- Daily Bar Chart (using Chart.js) -->
+            <canvas id="dailyChart"></canvas>
+
+            <div id="dailyPollutants">
+               <h4>PM2.5</h4>
+               <canvas id="dailyPm25Chart"></canvas>
+
+               <h4>PM10</h4>
+               <canvas id="dailyPm10Chart"></canvas>
+            </div>
+         </div>
+      </div>
+   </div>
+
+   <script>
+      // JavaScript to control the chart rendering and switch between hourly and daily view
+      let hourlyData = {{ hourly_data | tojson }};
+      let dailyData = {{ daily_data | tojson }};
+      let hourlyPm25 = {{ hourly_pm25 | tojson }};
+      let hourlyPm10 = {{ hourly_pm10 | tojson }};
+
+      function changeView(view) {
+         if (view === 'Hourly') {
+            document.getElementById('hourlyView').style.display = 'block';
+            document.getElementById('dailyView').style.display = 'none';
+            renderHourlyCharts();
+         } else {
+            document.getElementById('hourlyView').style.display = 'none';
+            document.getElementById('dailyView').style.display = 'block';
+            renderDailyCharts();
+         }
+      }
+
+      // Hourly Chart rendering
+      function renderHourlyCharts() {
+         const hourlyChart = new Chart(document.getElementById('hourlyChart'), {
+            type: 'bar',
+            data: {
+               labels: hourlyData.map(item => item.time),
+               datasets: [{
+                  label: 'Hourly AQI',
+                  data: hourlyData.map(item => item.value),
+                  backgroundColor: 'rgba(88, 191, 230, 0.3)',
+                  borderColor: 'rgba(88, 191, 230, 1)',
+                  borderWidth: 1
+               }]
+            },
+            options: {
+               responsive: true,
+               scales: {
+                  y: {
+                     beginAtZero: true
+                  }
+               }
+            }
+         });
+
+         // PM2.5 Hourly Chart
+         const hourlyPm25Chart = new Chart(document.getElementById('hourlyPm25Chart'), {
+            type: 'line',
+            data: {
+               labels: hourlyPm25.map(item => item.time),
+               datasets: [{
+                  label: 'PM2.5',
+                  data: hourlyPm25.map(item => item.value),
+                  fill: false,
+                  borderColor: 'rgba(88, 191, 230, 1)',
+                  tension: 0.1
+               }]
+            },
+            options: {
+               responsive: true,
+               scales: {
+                  y: {
+                     beginAtZero: true
+                  }
+               }
+            }
+         });
+
+         // PM10 Hourly Chart
+         const hourlyPm10Chart = new Chart(document.getElementById('hourlyPm10Chart'), {
+            type: 'line',
+            data: {
+               labels: hourlyPm10.map(item => item.time),
+               datasets: [{
+                  label: 'PM10',
+                  data: hourlyPm10.map(item => item.value),
+                  fill: false,
+                  borderColor: 'rgba(88, 191, 230, 1)',
+                  tension: 0.1
+               }]
+            },
+            options: {
+               responsive: true,
+               scales: {
+                  y: {
+                     beginAtZero: true
+                  }
+               }
+            }
+         });
+      }
+
+      // Daily Chart rendering
+      function renderDailyCharts() {
+         const dailyChart = new Chart(document.getElementById('dailyChart'), {
+            type: 'bar',
+            data: {
+               labels: dailyData.map(item => item.date),
+               datasets: [{
+                  label: 'Daily AQI',
+                  data: dailyData.map(item => item.aqi),
+                  backgroundColor: 'rgba(88, 191, 230, 0.3)',
+                  borderColor: 'rgba(88, 191, 230, 1)',
+                  borderWidth: 1
+               }]
+            },
+            options: {
+               responsive: true,
+               scales: {
+                  y: {
+                     beginAtZero: true
+                  }
+               }
+            }
+         });
+
+         // PM2.5 Daily Chart
+         const dailyPm25Chart = new Chart(document.getElementById('dailyPm25Chart'), {
+            type: 'line',
+            data: {
+               labels: dailyData.map(item => item.date),
+               datasets: [{
+                  label: 'PM2.5',
+                  data: dailyData.map(item => item.pm2_5),
+                  fill: false,
+                  borderColor: 'rgba(88, 191, 230, 1)',
+                  tension: 0.1
+               }]
+            },
+            options: {
+               responsive: true,
+               scales: {
+                  y: {
+                     beginAtZero: true
+                  }
+               }
+            }
+         });
+
+         // PM10 Daily Chart
+         const dailyPm10Chart = new Chart(document.getElementById('dailyPm10Chart'), {
+            type: 'line',
+            data: {
+               labels: dailyData.map(item => item.date),
+               datasets: [{
+                  label: 'PM10',
+                  data: dailyData.map(item => item.pm10),
+                  fill: false,
+                  borderColor: 'rgba(88, 191, 230, 1)',
+                  tension: 0.1
+               }]
+            },
+            options: {
+               responsive: true,
+               scales: {
+                  y: {
+                     beginAtZero: true
+                  }
+               }
+            }
+         });
+      }
+
+      // Initial rendering (default view)
+      renderHourlyCharts();
+   </script>
 </body>
 </html>
