@@ -31,8 +31,11 @@ def get_air_pollution_data(request):
 
             # Correct time, date, and day based on AQI data timestamp
             current_timestamp = current_data['list'][0]['dt']
-            selected_time = datetime.now().strftime('%H:%M:%S')  # Current time for 'selected_time'
+            selected_time = datetime.now().strftime('%I:%M:%S %p')  # 12-hour format with AM/PM
             selected_date = datetime.now().strftime('%Y-%m-%d')  # Current date for 'selected_date'
+
+            # Format the time as a human-readable string (e.g., 08:42 AM)
+            formatted_time = datetime.fromtimestamp(current_timestamp).strftime('%I:%M %p')
 
             air_pollution_data = {
                 'info': info,
@@ -45,9 +48,10 @@ def get_air_pollution_data(request):
                 'pm2_5': current_data['list'][0]['components']['pm2_5'],
                 'pm10': current_data['list'][0]['components']['pm10'],
                 'nh3': current_data['list'][0]['components']['nh3'],
-                'dt': datetime.fromtimestamp(current_timestamp).strftime('%H:%M:%S'),
+                'dt': datetime.fromtimestamp(current_timestamp).strftime('%A, %B %d, %Y at %I:%M %p'),
                 'day': datetime.fromtimestamp(current_timestamp).strftime('%A'),
-                'date': datetime.fromtimestamp(current_timestamp).strftime('%Y-%m-%d')
+                'date': datetime.fromtimestamp(current_timestamp).strftime('%d %b %Y'), 
+                'time': formatted_time  
             }
 
             # Recommendations & Suggestions
@@ -74,7 +78,7 @@ def get_air_pollution_data(request):
             for forecast in forecast_data['list']:
                 forecast_timestamp = forecast['dt']
                 print(f"Forecast Raw Timestamp: {forecast_timestamp}")
-                forecast_date = datetime.fromtimestamp(forecast_timestamp).strftime('%Y-%m-%d')
+                forecast_date = datetime.fromtimestamp(forecast_timestamp).strftime('%d %b %Y')  # Converts timestamp to '14 Apr 2025'
                 forecast_day = datetime.fromtimestamp(forecast_timestamp).strftime('%A')
 
                 if forecast_date != current_date:

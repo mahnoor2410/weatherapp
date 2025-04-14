@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AQI Rankings</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        table {
+            width: 80%;
+            border-collapse: collapse;
+            margin: 0 auto;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 12px;
+            text-align: center;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        .rank {
+            width: 10%;
+        }
+        .error {
+            color: red;
+        }
+        .loading {
+            text-align: center;
+            font-style: italic;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <h1>Top Cities Ranking by AQI</h1>
+    <table id="aqiTable">
+        <tr>
+            <th class="rank">Rank</th>
+            <th>City</th>
+            <th>AQI</th>
+            <th>Air Quality</th>
+        </tr>
+        <tr id="loadingRow">
+            <td colspan="4" class="loading">Loading data...</td>
+        </tr>
+    </table>
+
+    <script>
+        const apiKey = "{{ api_key }}"; // Your API Key
+        const cities = [ 'Lahore','Karachi','Faisalabad','Gujranwala','Peshawar','Islamabad','Rawalpindi','Sialkot','Multan','Quetta','Sheikhupura','Bahawalpur','Sargodha','Hyderabad','Okara'];
+
+        // Function to get air quality description based on AQI value
+        function getAirQualityDescription(aqi) {
+            if (aqi <= 50) return 'Good';
+            if (aqi <= 100) return 'Moderate';
+            if (aqi <= 150) return 'Unhealthy for Sensitive Groups';
+            if (aqi <= 200) return 'Unhealthy';
+            if (aqi <= 300) return 'Very Unhealthy';
+            return 'Hazardous';
+        }
+
+        async function fetchAQI(city) {
+            try {
+                const response = await fetch(`https://api.api-ninjas.com/v1/airquality?city=${encodeURIComponent(city)}`, {
+                    headers: {
+                        'X-Api-Key': apiKey
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API request failed with status ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                if (data && data.overall_aqi !== undefined) {
+                    return {
+                        city: city,
+                        aqi: data.overall_aqi,
+                        quality: getAirQualityDescription(data.overall_aqi)
+                    };
+                } else {
+                    return { city: city, aqi: 'N/A', quality: 'N/A' };
+                }
+            } catch (error) {
+                console.error(`Error fetching AQI for ${city}:`, error);
+                return { city: city, aqi: 'Error', quality: 'Error' };
+            }
+        }
+
+        async function getAQIData() {
+            try {
+                // Show loading indicator
+                document.getElementById('loadingRow').style.display = 'table-row';
+                
+                // Fetch AQI for all cities
+                const aqiPromises = cities.map(city => fetchAQI(city));
+                const aqiData = await Promise.all(aqiPromises);
+
+                // Hide loading indicator
+                document.getElementById('loadingRow').style.display = 'none';
+
+                // Filter out cities with errors or N/A and sort by AQI (descending)
+                const validData = aqiData.filter(item => typeof item.aqi === 'number');
+                validData.sort((a, b) => b.aqi - a.aqi);
+
+                // Render the data into the table
+                const table = document.getElementById('aqiTable');
+                
+                // Clear loading row
+                const loadingRow = document.getElementById('loadingRow');
+                if (loadingRow) loadingRow.remove();
+
+                // Add valid data rows
+                validData.forEach((data, index) => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="rank">${index + 1}</td>
+                        <td>${data.city}</td>
+                        <td>${data.aqi}</td>
+                        <td>${data.quality}</td>
+                    `;
+                    table.appendChild(row);
+                });
+
+                // Add error rows if any
+                aqiData.filter(item => typeof item.aqi !== 'number').forEach(data => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="rank">-</td>
+                        <td>${data.city}</td>
+                        <td class="error">${data.aqi}</td>
+                        <td class="error">${data.quality}</td>
+                    `;
+                    table.appendChild(row);
+                });
+
+            } catch (error) {
+                console.error('Error processing AQI data:', error);
+                document.getElementById('loadingRow').innerHTML = 
+                    `<td colspan="4" class="error">Failed to load AQI data. Please try again later.</td>`;
+            }
+        }
+
+        // Fetch and display the AQI data when the page loads
+        getAQIData();
+    </script>
+</body>
+</html>

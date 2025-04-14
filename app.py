@@ -9,11 +9,14 @@ from config import Config
 from flask_migrate import Migrate
 from markupsafe import Markup
 import re
+import os
 
 from flask_cors import CORS
 
 app = Flask(__name__)
 CORS(app)
+
+API_KEY = os.getenv('API_NINJAS_KEY')
 
 app = Flask(__name__)
 migrate = Migrate(app, db)
@@ -38,6 +41,13 @@ def load_user(user_id):
 @app.route('/')
 def home():
     return render_template('base.html')
+
+# ===================== USER PROFILE ROUTE =====================
+@app.route('/profile')
+@login_required
+def profile():
+    return render_template('profile.html', user=current_user)
+
 
 # ===================== SIGNUP ROUTES =====================
 @app.route('/signup', methods=['GET', 'POST'])
@@ -85,11 +95,42 @@ def login():
             flash('Login Unsuccessful. Please check username and password', 'danger')
     return render_template('login.html', form=form)
 
+# ===================== CHANGE PASSWORD ROUTES =====================
+@app.route('/change_password', methods=['GET', 'POST'])
+@login_required
+def change_password():
+    if request.method == 'POST':
+        current_password = request.form.get('current_password')
+        new_password = request.form.get('new_password')
+        confirm_password = request.form.get('confirm_password')
+
+        if not current_user.check_password(current_password):
+            flash('Current password is incorrect.', 'danger')
+            return redirect(url_for('change_password'))
+
+        if new_password != confirm_password:
+            flash('New passwords do not match.', 'danger')
+            return redirect(url_for('change_password'))
+
+        current_user.set_password(new_password)
+        db.session.commit()
+        logout_user()
+        flash('Password changed. Please log in again.', 'info')
+        return redirect(url_for('login'))
+
+    return render_template('change_password.html')
+
+
 # ===================== LOGOUT ROUTES =====================
 @app.route('/logout')
 def logout():
     logout_user()
     return redirect(url_for('index'))
+
+# ==================== Route to the ranking page
+@app.route('/ranking')
+def ranking():
+    return render_template('ranking.html', api_key=API_KEY)  # Renders the ranking.html page
 
 # ===================== DASHBOARD ROUTES =====================
 @app.route('/dashboard')

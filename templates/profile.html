@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>User Profile</title>
+    <style>
+        body {
+            background-color: #f5f5f5;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .profile-container {
+            max-width: 500px;
+            margin: 60px auto;
+            padding: 30px;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .profile-container h2 {
+            text-align: center;
+            margin-bottom: 25px;
+            color: #333;
+        }
+
+        .profile-item {
+            margin-bottom: 18px;
+            font-size: 18px;
+        }
+
+        .profile-item label {
+            font-weight: bold;
+            display: inline-block;
+            width: 120px;
+            color: #444;
+        }
+
+        .profile-actions {
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .profile-actions a {
+            text-decoration: none;
+            padding: 10px 20px;
+            margin: 5px;
+            color: white;
+            background-color: #007BFF;
+            border-radius: 5px;
+            transition: background 0.2s ease-in-out;
+        }
+
+        .profile-actions a:hover {
+            background-color: #0056b3;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="profile-container">
+        <h2>👤 User Profile</h2>
+
+        <div class="profile-item">
+            <label>Username:</label> {{ user.username }}
+        </div>
+
+        <div class="profile-item">
+            <label>Email:</label> {{ user.email }}
+        </div>
+
+        <div class="profile-item">
+            <label>Password:</label> ••••••••
+        </div>
+
+        <div class="profile-actions">
+            <a href="{{ url_for('change_password') }}">Change Password</a>
+            <a href="{{ url_for('index') }}">Back to Dashboard</a>
+        </div>
+    </div>
+
+</body>
+</html>
