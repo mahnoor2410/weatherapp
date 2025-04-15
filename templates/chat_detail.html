@@ -11,9 +11,9 @@
         <h2>Edit Chat Title</h2>
         <div class="chat-detail-box">
             <h3>Current Title: {{ chat.title or 'No Title' }}</h3>
-            <p><strong>User Input:</strong> {{ chat.user_input }}</p>
+            <p><strong>Your Query:</strong> {{ chat.user_input }}</p>
             <p><strong>Bot Response:</strong> <span class="bot-response">{{ chat.bot_response | safe }}</span></p>
-            <p><strong>Timestamp:</strong> {{ chat.timestamp }}</p>
+            <p><strong>Time:</strong> {{ chat.timestamp.strftime('%B %d, %Y at %I:%M %p') }}</p>
 
             <!-- Edit Title Form -->
             <form action="{{ url_for('edit_title', chat_id=chat.id) }}" method="POST">

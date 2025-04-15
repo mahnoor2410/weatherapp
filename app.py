@@ -37,10 +37,15 @@ login_manager.login_view = 'login'  # If the user is not logged in, redirect to 
 def load_user(user_id):
     return User.query.get(int(user_id))
 
+# ===================== APP CONFIGURATION =======================
+# Add the REMEMBER_COOKIE_DURATION configuration here
+app.config['REMEMBER_COOKIE_DURATION'] = timedelta(days=7)  # Set the duration for the remember me cookie (7 days)
+
+
 # ===================== HOME ROUTES =====================
 @app.route('/')
 def home():
-    return render_template('base.html')
+    return render_template('home.html')
 
 # ===================== USER PROFILE ROUTE =====================
 @app.route('/profile')
@@ -97,25 +102,29 @@ def login():
 
 # ===================== CHANGE PASSWORD ROUTES =====================
 @app.route('/change_password', methods=['GET', 'POST'])
-@login_required
 def change_password():
     if request.method == 'POST':
-        current_password = request.form.get('current_password')
+        email = request.form.get('email').strip().lower()
         new_password = request.form.get('new_password')
         confirm_password = request.form.get('confirm_password')
 
-        if not current_user.check_password(current_password):
-            flash('Current password is incorrect.', 'danger')
+        # 1. Check if user exists by email
+        user = User.query.filter_by(email=email).first()
+
+        if not user:
+            flash('No user found with that email address.', 'danger')
             return redirect(url_for('change_password'))
 
+        # 2. Check if passwords match
         if new_password != confirm_password:
             flash('New passwords do not match.', 'danger')
             return redirect(url_for('change_password'))
 
-        current_user.set_password(new_password)
+        # 3. Set the new password
+        user.set_password(new_password)  # Make sure this hashes password internally
         db.session.commit()
-        logout_user()
-        flash('Password changed. Please log in again.', 'info')
+
+        flash('Password successfully updated. You can now log in.', 'success')
         return redirect(url_for('login'))
 
     return render_template('change_password.html')
@@ -125,21 +134,23 @@ def change_password():
 @app.route('/logout')
 def logout():
     logout_user()
-    return redirect(url_for('index'))
+    return redirect(url_for('map'))
 
 # ==================== Route to the ranking page
 @app.route('/ranking')
+@login_required
 def ranking():
-    return render_template('ranking.html', api_key=API_KEY)  # Renders the ranking.html page
+    return render_template('ranking.html', api_key=API_KEY)  
 
 # ===================== DASHBOARD ROUTES =====================
 @app.route('/dashboard')
 @login_required
 def index():
-    return render_template('index.html', username=current_user.username)
+    return render_template('map.html', username=current_user.username)
 
 # ===================== AIR POLLUTION PAGE ROUTES =====================
 @app.route('/air_pollution', methods=['POST'])
+@login_required
 def air_pollution():
     # Get data from the `get_air_pollution_data` function
     data = get_air_pollution_data(request)
@@ -165,8 +176,6 @@ def air_pollution():
         if 'date' in entry and isinstance(entry['date'], datetime):  # ✅ FIXED HERE
            entry['date'] = entry['date'].strftime('%Y-%m-%d')  # Convert datetime to string
 
-
-    # Now you can pass these variables to the template correctly
     return render_template('air_pollution.html', 
                            air_pollution_data=air_pollution_data, 
                            recommendations=recommendations, 
@@ -177,7 +186,7 @@ def air_pollution():
                            hourly_pm10=hourly_pm10, 
                            selected_time=selected_time, 
                            selected_aqi=selected_aqi,
-                           daily_data=daily_data)  # Add daily_data to context
+                           daily_data=daily_data)  
 
 # ===================== CHATBOT RESPONSE =====================
 def format_response(text):
@@ -241,7 +250,6 @@ def history():
     ).order_by(ChatHistory.timestamp.desc()).all()  # latest chats first
     
     return render_template('history.html', history=history)
-
 
 # ===================== CHAT DETAIL ROUTE =====================
 @app.route('/history/<int:chat_id>')
